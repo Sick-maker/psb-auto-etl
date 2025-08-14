@@ -1,0 +1,55 @@
+name: PSB ETL → Notion
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'RUN-*/*'
+      - 'bundles/**'
+      - 'tools/**'
+      - 'schemas/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r requirements.txt
+
+      # You currently keep the run folder at repo root (RUN-EXP-...).
+      # This step copies any root RUN-* folders into a temporary 'bundles/' dir,
+      # so gh_runner.py finds them without you having to reorganize the repo.
+      - name: Prepare ephemeral bundles dir
+        shell: bash
+        run: |
+          mkdir -p bundles
+          shopt -s nullglob
+          for d in RUN-*; do
+            if [ -d "$d" ]; then
+              echo "Copying $d → bundles/"
+              cp -R "$d" bundles/
+            fi
+          done
+
+      - name: Run ETL over bundles and sync to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_RUNS: ${{ secrets.NOTION_DB_RUNS }}
+          NOTION_DB_RESULTS: ${{ secrets.NOTION_DB_RESULTS }}
+          NOTION_DB_ARTIFACTS: ${{ secrets.NOTION_DB_ARTIFACTS }}
+          NOTION_DB_BRIEFINGS: ${{ secrets.NOTION_DB_BRIEFINGS }}
+          # PSB_DRY_RUN: "1"   # uncomment to simulate without writing to Notion
+        run: python tools/gh_runner.py
+
+      - name: Upload out/ as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: psb-out
+          path: out/
