@@ -1,0 +1,67 @@
+{
+  "run_id": "RUN-EXP-20250814-0001-AB",
+  "experiment_id": "EXP-20250814-0001",
+  "hypothesis_id": "HYP-20250810-001",
+  "ciphertext": {
+    "id": "CTX-K4-base-v1.0",
+    "normalization": "upper_only_strip_punct_v1.0",
+    "region": "full"
+  },
+  "method": {
+    "id": "MTH-two-transp-affine-v0.1",
+    "parameters": {
+      "grid": "demo"
+    }
+  },
+  "scoring": {
+    "id": "SFX-composite-chi2-quad-words-v3.0",
+    "weights": {
+      "chi2": 0.35,
+      "quadgram": 0.45,
+      "wordrate": 0.2
+    },
+    "conventions": {
+      "log_base": "natural",
+      "smoothing": "+0.5",
+      "logp_floor": -17.0
+    },
+    "corpora": {
+      "COR-unigram-english-v2": "d6fc01f00986d69177e0c9fdf16c07417d67bd415b6a4681daad9a9de98a28e7",
+      "COR-function-words-v1.1": "4c490c6c56cf731f3024333be379a02ad555f07c2dc38032226a90c477cefe70",
+      "COR-quadgram-english-v3.0b": "bootstrap-checksum-placeholder"
+    }
+  },
+  "prng": {
+    "name": "pcg64",
+    "seed": 123456789
+  },
+  "env": {
+    "python": "3.11.7",
+    "env_hash": "sha256:demo"
+  },
+  "code_recipe": {
+    "repo": "psb-tools",
+    "commit": "c0ffee42"
+  },
+  "limits": {
+    "max_iterations": 1000,
+    "no_improve_patience": 200,
+    "max_time_minutes": 1
+  },
+  "outputs": {
+    "top_n": 10,
+    "retain_full_candidates": false,
+    "retain_hashes_only": true
+  },
+  "null_models": {
+    "primary": "NUL-K4-iid-unigram-v1.0",
+    "auxiliary": [
+      "NUL-K4-permute-unigram-v1.0",
+      "NUL-length97-uniformAtoZ-v1.0"
+    ],
+    "samples": 50000,
+    "artifacts": {
+      "primary_dist": "nul_iid_demo.csv"
+    }
+  }
+}

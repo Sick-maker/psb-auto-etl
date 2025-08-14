@@ -1,0 +1,28 @@
+{
+  "run_id": "RUN-EXP-20250814-0001-AB",
+  "scores": {
+    "best": 2.1,
+    "avg": 0.3,
+    "median": 0.25,
+    "p10": -0.1,
+    "p90": 1.1
+  },
+  "z_scores": {
+    "composite": 1.2,
+    "chi2": 0.5,
+    "quadgram": 0.9,
+    "wordrate": 0.2
+  },
+  "artifacts": {
+    "score_histogram": "score_histogram.png",
+    "param_sweep": "param_sweep.csv",
+    "topn_table": "topn.csv"
+  },
+  "resources": {
+    "cpu_hours": 0.02,
+    "wall_minutes": 1.1,
+    "peak_mem_mb": 120,
+    "iterations": 1000,
+    "candidates_per_sec": 900.0
+  }
+}
