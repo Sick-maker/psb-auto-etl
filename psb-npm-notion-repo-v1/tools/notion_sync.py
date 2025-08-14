@@ -20,15 +20,37 @@ def need_env():
         return False
     return True
 
-def notion_query(db_id, prop_name, value):
+def get_db_props(db_id):
+    url = f"{API}/databases/{db_id}"
+    r = requests.get(url, headers=HEADERS, timeout=60)
+    if r.status_code != 200:
+        print("WARN: Could not fetch DB schema:", db_id, r.status_code, r.text[:300])
+        return {}
+    data = r.json()
+    return {k: v.get("type") for k, v in data.get("properties", {}).items()}
+
+def notion_query(db_id, prop_name, prop_type, value):
     url = f"{API}/databases/{db_id}/query"
-    payload = {"filter": {"property": prop_name, "rich_text": {"equals": value}}}
+    if prop_type == "title":
+        filt = {"property": prop_name, "title": {"equals": value}}
+    elif prop_type == "number":
+        try:
+            value = float(value)
+        except:
+            value = None
+        filt = {"property": prop_name, "number": {"equals": value}}
+    else:
+        # default to rich_text
+        filt = {"property": prop_name, "rich_text": {"equals": value}}
+    payload = {"filter": filt}
     r = requests.post(url, headers=HEADERS, json=payload, timeout=60)
-    r.raise_for_status()
+    if r.status_code != 200:
+        print("ERROR: Query failed", db_id, prop_name, prop_type, r.status_code, r.text[:300])
+        r.raise_for_status()
     return r.json().get("results", [])
 
 def page_props_from_map(db_kind, row):
-    # Map CSV columns to Notion properties (text/rich_text/title/number/select)
+    # Map CSV columns to Notion properties (title/rich_text/number/select)
     def title(v): return {"title":[{"type":"text","text":{"content": v or ""}}]}
     def text(v):  return {"rich_text":[{"type":"text","text":{"content": v or ""}}]}
     def number(v):
@@ -38,89 +60,99 @@ def page_props_from_map(db_kind, row):
 
     if db_kind == "runs":
         return {
-            "Title": title(row["Title"]),
-            "RUN ID": text(row["RUN ID"]),
-            "Experiment": text(row["Experiment"]),
-            "Hypothesis": text(row["Hypothesis"]),
-            "Ciphertext": text(row["Ciphertext"]),
-            "Method": text(row["Method"]),
-            "Scoring": text(row["Scoring"]),
-            "PRNG": text(row["PRNG"]),
-            "Seed": text(row["Seed"]),
-            "Env Hash": text(row["Env Hash"]),
-            "Code Commit": text(row["Code Commit"]),
-            "Stop Condition": text(row["Stop Condition"]),
-            "Status": sel(row["Status"]),
-            "CPUh": number(row["CPUh"]),
-            "Wall Minutes": number(row["Wall Minutes"]),
-            "Peak Mem MB": number(row["Peak Mem MB"]),
-            "Iterations": number(row["Iterations"]),
-            "Candidates/sec": number(row["Candidates/sec"]),
+            "Title": title(row.get("Title","")),
+            "RUN ID": text(row.get("RUN ID","")),
+            "Experiment": text(row.get("Experiment","")),
+            "Hypothesis": text(row.get("Hypothesis","")),
+            "Ciphertext": text(row.get("Ciphertext","")),
+            "Method": text(row.get("Method","")),
+            "Scoring": text(row.get("Scoring","")),
+            "PRNG": text(row.get("PRNG","")),
+            "Seed": text(row.get("Seed","")),
+            "Env Hash": text(row.get("Env Hash","")),
+            "Code Commit": text(row.get("Code Commit","")),
+            "Stop Condition": text(row.get("Stop Condition","")),
+            "Status": sel(row.get("Status","")),
+            "CPUh": number(row.get("CPUh","")),
+            "Wall Minutes": number(row.get("Wall Minutes","")),
+            "Peak Mem MB": number(row.get("Peak Mem MB","")),
+            "Iterations": number(row.get("Iterations","")),
+            "Candidates/sec": number(row.get("Candidates/sec","")),
         }
     if db_kind == "results":
         return {
-            "Title": title(row["Title"]),
-            "RUN": text(row["RUN"]),
-            "Best Score": number(row["Best Score"]),
-            "Avg Score": number(row["Avg Score"]),
-            "Median": number(row["Median"]),
-            "p10": number(row["p10"]),
-            "p90": number(row["p90"]),
-            "Composite Z": number(row["Composite Z"]),
-            "Chi2 Z": number(row["Chi2 Z"]),
-            "Quadgram Z": number(row["Quadgram Z"]),
-            "WordRate Z": number(row["WordRate Z"]),
-            "TopN Table": text(row["TopN Table"]),
-            "Score Histogram": text(row["Score Histogram"]),
-            "Param Sweep": text(row["Param Sweep"]),
+            "Title": title(row.get("Title","")),
+            "RUN": text(row.get("RUN","")),
+            "Best Score": number(row.get("Best Score","")),
+            "Avg Score": number(row.get("Avg Score","")),
+            "Median": number(row.get("Median","")),
+            "p10": number(row.get("p10","")),
+            "p90": number(row.get("p90","")),
+            "Composite Z": number(row.get("Composite Z","")),
+            "Chi2 Z": number(row.get("Chi2 Z","")),
+            "Quadgram Z": number(row.get("Quadgram Z","")),
+            "WordRate Z": number(row.get("WordRate Z","")),
+            "TopN Table": text(row.get("TopN Table","")),
+            "Score Histogram": text(row.get("Score Histogram","")),
+            "Param Sweep": text(row.get("Param Sweep","")),
         }
     if db_kind == "artifacts":
         return {
-            "Title": title(row["Title"]),
-            "RUN": text(row["RUN"]),
-            "Type": sel(row["Type"]),
-            "Path/URL": text(row["Path/URL"]),
-            "Checksum": text(row["Checksum"]),
-            "Mime": text(row["Mime"]),
-            "Size Bytes": number(row["Size Bytes"]),
+            "Title": title(row.get("Title","")),
+            "RUN": text(row.get("RUN","")),
+            "Type": sel(row.get("Type","")),
+            "Path/URL": text(row.get("Path/URL","")),
+            "Checksum": text(row.get("Checksum","")),
+            "Mime": text(row.get("Mime","")),
+            "Size Bytes": number(row.get("Size Bytes","")),
         }
     if db_kind == "briefings":
         return {
-            "Title": title(row["Title"]),
-            "RUN": text(row["RUN"]),
-            "Version": text(row["Version"]),
-            "Header": text(row["Header"]),
-            "Technical": text(row["Technical"]),
-            "Broad": text(row["Broad"]),
+            "Title": title(row.get("Title","")),
+            "RUN": text(row.get("RUN","")),
+            "Version": text(row.get("Version","")),
+            "Header": text(row.get("Header","")),
+            "Technical": text(row.get("Technical","")),
+            "Broad": text(row.get("Broad","")),
         }
     raise ValueError("Unknown db kind")
 
-def upsert(db_id, db_kind, csv_path, key_prop):
+def upsert(db_id, db_kind, csv_path, key_prop, prop_types):
     if not os.path.exists(csv_path): return
+    key_type = prop_types.get(key_prop, "rich_text")
     with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             key = row[key_prop]
-            # query
-            results = notion_query(db_id, key_prop, key)
+            results = notion_query(db_id, key_prop, key_type, key)
             props = page_props_from_map(db_kind, row)
             if results:
                 page_id = results[0]["id"]
                 r = requests.patch(f"{API}/pages/{page_id}", headers=HEADERS, json={"properties": props}, timeout=60)
-                r.raise_for_status()
+                if r.status_code != 200:
+                    print("ERROR: Update failed", db_kind, key, r.status_code, r.text[:300]); r.raise_for_status()
                 print(f"Updated {db_kind} page for {key}")
             else:
                 r = requests.post(f"{API}/pages", headers=HEADERS, json={"parent":{"database_id": db_id},"properties": props}, timeout=60)
-                r.raise_for_status()
+                if r.status_code != 200:
+                    print("ERROR: Create failed", db_kind, key, r.status_code, r.text[:300]); r.raise_for_status()
                 print(f"Created {db_kind} page for {key}")
-            time.sleep(0.3)  # be gentle
+            time.sleep(0.3)  # rate limiting
 
 def main(out_dir):
     if not need_env(): return
-    upsert(DB_RUNS, "runs", os.path.join(out_dir, "runs.csv"), "RUN ID")
-    upsert(DB_RESULTS, "results", os.path.join(out_dir, "results_summaries.csv"), "RUN")
-    upsert(DB_ARTIFACTS, "artifacts", os.path.join(out_dir, "artifacts.csv"), "Title")
-    upsert(DB_BRIEFINGS, "briefings", os.path.join(out_dir, "briefings.csv"), "RUN")
+    dbs = {
+        "runs": (DB_RUNS, "RUN ID"),
+        "results": (DB_RESULTS, "RUN"),
+        "artifacts": (DB_ARTIFACTS, "Title"),   # Title is a title-type property
+        "briefings": (DB_BRIEFINGS, "RUN"),
+    }
+    # Pull schema once for each DB to pick correct filter type
+    types = {kind: get_db_props(db_id) for kind,(db_id,_) in dbs.items()}
+    upsert(DB_RUNS, "runs", os.path.join(out_dir, "runs.csv"), "RUN ID", types["runs"])
+    upsert(DB_RESULTS, "results", os.path.join(out_dir, "results_summaries.csv"), "RUN", types["results"])
+    upsert(DB_ARTIFACTS, "artifacts", os.path.join(out_dir, "artifacts.csv"), "Title", types["artifacts"])
+    upsert(DB_BRIEFINGS, "briefings", os.path.join(out_dir, "briefings.csv"), "RUN", types["briefings"])
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
