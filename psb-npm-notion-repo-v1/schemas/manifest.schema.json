@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PSB Run Manifest (v0.6 core)",
+  "type": "object",
+  "required": [
+    "run_id",
+    "experiment_id",
+    "ciphertext",
+    "method",
+    "scoring",
+    "prng",
+    "env",
+    "limits",
+    "outputs",
+    "null_models"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "experiment_id": {
+      "type": "string"
+    },
+    "hypothesis_id": {
+      "type": "string"
+    },
+    "ciphertext": {
+      "type": "object",
+      "required": [
+        "id",
+        "normalization",
+        "region"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "normalization": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        }
+      }
+    },
+    "method": {
+      "type": "object",
+      "required": [
+        "id",
+        "parameters"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "required": [
+        "id",
+        "weights",
+        "conventions",
+        "corpora"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "weights": {
+          "type": "object"
+        },
+        "conventions": {
+          "type": "object",
+          "required": [
+            "log_base",
+            "smoothing",
+            "logp_floor"
+          ],
+          "properties": {
+            "log_base": {
+              "enum": [
+                "natural"
+              ]
+            },
+            "smoothing": {
+              "enum": [
+                "+0.5"
+              ]
+            },
+            "logp_floor": {
+              "type": "number"
+            }
+          }
+        },
+        "corpora": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "prng": {
+      "type": "object",
+      "required": [
+        "name",
+        "seed"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "number"
+        }
+      }
+    },
+    "env": {
+      "type": "object"
+    },
+    "code_recipe": {
+      "type": "object"
+    },
+    "limits": {
+      "type": "object"
+    },
+    "outputs": {
+      "type": "object"
+    },
+    "null_models": {
+      "type": "object",
+      "required": [
+        "primary",
+        "auxiliary",
+        "samples",
+        "artifacts"
+      ],
+      "properties": {
+        "primary": {
+          "type": "string"
+        },
+        "auxiliary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "samples": {
+          "type": "number"
+        },
+        "seed": {
+          "type": [
+            "number",
+            "string"
+          ]
+        },
+        "artifacts": {
+          "type": "object"
+        }
+      }
+    },
+    "overlays": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PSB Results Summary (v0.6 core)",
+  "type": "object",
+  "required": [
+    "run_id",
+    "scores",
+    "z_scores",
+    "resources"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "scores": {
+      "type": "object",
+      "required": [
+        "best",
+        "avg",
+        "median",
+        "p10",
+        "p90"
+      ],
+      "properties": {
+        "best": {
+          "type": "number"
+        },
+        "avg": {
+          "type": "number"
+        },
+        "median": {
+          "type": "number"
+        },
+        "p10": {
+          "type": "number"
+        },
+        "p90": {
+          "type": "number"
+        }
+      }
+    },
+    "z_scores": {
+      "type": "object",
+      "required": [
+        "composite",
+        "chi2",
+        "quadgram",
+        "wordrate"
+      ],
+      "properties": {
+        "composite": {
+          "type": "number"
+        },
+        "chi2": {
+          "type": "number"
+        },
+        "quadgram": {
+          "type": "number"
+        },
+        "wordrate": {
+          "type": "number"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "score_histogram": {
+          "type": "string"
+        },
+        "param_sweep": {
+          "type": "string"
+        },
+        "topn_table": {
+          "type": "string"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "required": [
+        "cpu_hours",
+        "wall_minutes",
+        "peak_mem_mb",
+        "iterations",
+        "candidates_per_sec"
+      ],
+      "properties": {
+        "cpu_hours": {
+          "type": "number"
+        },
+        "wall_minutes": {
+          "type": "number"
+        },
+        "peak_mem_mb": {
+          "type": "number"
+        },
+        "iterations": {
+          "type": "number"
+        },
+        "candidates_per_sec": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
