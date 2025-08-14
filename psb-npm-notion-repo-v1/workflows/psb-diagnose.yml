@@ -1,0 +1,26 @@
+name: PSB Notion Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/notion_diag.py'
+      - '.github/workflows/psb-diagnose.yml'
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --upgrade pip requests
+      - name: Check Notion connectivity and DB schemas
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_RUNS: ${{ secrets.NOTION_DB_RUNS }}
+          NOTION_DB_RESULTS: ${{ secrets.NOTION_DB_RESULTS }}
+          NOTION_DB_ARTIFACTS: ${{ secrets.NOTION_DB_ARTIFACTS }}
+          NOTION_DB_BRIEFINGS: ${{ secrets.NOTION_DB_BRIEFINGS }}
+        run: python tools/notion_diag.py
