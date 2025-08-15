@@ -1,12 +1,12 @@
 name: build-kryptos-csvs
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - 'data/raw/**'
       - 'tools/kryptos_normalize.py'
       - 'tools/check_kryptos_consistency.py'
-  workflow_dispatch:
 
 permissions:
   contents: write  # allow committing CSVs back
@@ -18,55 +18,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Build CSVs
-        run: python tools/kryptos_normalize.py build-csvs
-      - name: Sanity checks
-        run: python tools/check_kryptos_consistency.py
-      - name: Commit generated CSVs
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: 'build: regenerate ciphertexts.csv & baselines.csv'
-          file_pattern: |
-            data/ciphertexts.csv
-            data/baselines.csv
-
-# .github/workflows/build-kryptos-csvs.yml
-      - name: Build CSVs
-        run: python tools/kryptos_normalize.py build-csvs
-
-      - name: Show generated files
-        run: |
-          ls -l data
-          echo "--- baselines.csv (head) ---"
-          head -n 5 data/baselines.csv || true
-          echo "--- ciphertexts.csv (head) ---"
-          head -n 5 data/ciphertexts.csv || true
-
-# .github/workflows/build-kryptos-csvs.yml
-name: build-kryptos-csvs
-
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'data/raw/**'
-      - 'tools/kryptos_normalize.py'
-      - 'tools/check_kryptos_consistency.py'
-
-permissions:
-  contents: write
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
 
       - name: Build CSVs
         run: python tools/kryptos_normalize.py build-csvs
@@ -77,7 +32,9 @@ jobs:
           test -f data/ciphertexts.csv || (echo "ciphertexts.csv missing" && exit 1)
           test -f data/baselines.csv   || (echo "baselines.csv missing" && exit 1)
           echo "--- baselines.csv (head) ---"
-          head -5 data/baselines.csv || true
+          head -n 5 data/baselines.csv || true
+          echo "--- ciphertexts.csv (head) ---"
+          head -n 5 data/ciphertexts.csv || true
 
       - name: Sanity checks
         run: python tools/check_kryptos_consistency.py
