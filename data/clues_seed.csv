@@ -1,6 +1,5 @@
-Title,CTX,Token,Expected Start,Length,Notes,Version,Changelog
-K4: BERLIN,CTX-K4-base-v1.0,BERLIN,,6,,1,
-K4: CLOCK,CTX-K4-base-v1.0,CLOCK,,5,,1,
-K4: EAST,CTX-K4-base-v1.0,EAST,,4,,1,
-K4: NORTHEAST,CTX-K4-base-v1.0,NORTHEAST,,9,,1,
-TEMPLATE (keep),,,,
+title,token,ctx_id,notes,version
+K4: CLOCK,CLOCK,CTX-K4-base-v1.0,"2014/2020 reveals; spelled CLOCK",1.0
+K4: NORTHEAST,NORTHEAST,CTX-K4-base-v1.0,"2014 reveal",1.0
+K4: BERLIN,BERLIN,CTX-K4-base-v1.0,"2013 reveal",1.0
+K4: EAST,EAST,CTX-K4-base-v1.0,"2019/2020 reveals",1.0
