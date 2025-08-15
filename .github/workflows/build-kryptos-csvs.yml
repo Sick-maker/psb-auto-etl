@@ -39,6 +39,10 @@ jobs:
       - name: Sanity checks
         run: python tools/check_kryptos_consistency.py
 
+      - name: Stage outputs
+        run: |
+          git add data/ciphertexts.csv data/baselines.csv
+
       - name: Commit generated CSVs
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
@@ -46,3 +50,4 @@ jobs:
           file_pattern: |
             data/ciphertexts.csv
             data/baselines.csv
+
