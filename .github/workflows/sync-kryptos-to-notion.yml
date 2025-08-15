@@ -1,0 +1,60 @@
+name: sync-kryptos-to-notion
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run without writing to Notion'
+        required: false
+        default: 'true'
+  push:
+    paths:
+      - 'data/ciphertexts.csv'
+      - 'data/baselines.csv'
+      - 'data/clues_seed.csv'
+      - 'data/controls_seed.csv'
+      - 'tools/notion_sync_kryptos.py'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Ensure requests
+        run: python -m pip install --upgrade pip requests
+
+      - name: Check secrets present
+        run: |
+          if [ -z "${{ secrets.NOTION_TOKEN }}" ]; then
+            echo "NOTION_TOKEN is not set. Skipping."
+            exit 1
+          fi
+
+      - name: Dry-run flag
+        id: drv
+        run: |
+          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+            echo "args=" > args.txt
+          else
+            echo "args=--dry-run" > args.txt
+          fi
+          cat args.txt
+
+      - name: Sync to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          DB_CIPHERTEXTS: ${{ secrets.DB_CIPHERTEXTS }}
+          DB_BASELINES:   ${{ secrets.DB_BASELINES }}
+          DB_CLUES:       ${{ secrets.DB_CLUES }}
+          DB_CONTROLS:    ${{ secrets.DB_CONTROLS }}
+        run: |
+          ARGS=$(cut -d= -f2 args.txt)
+          echo "Running with ARGS='${ARGS}'"
+          python tools/notion_sync_kryptos.py ${ARGS}
