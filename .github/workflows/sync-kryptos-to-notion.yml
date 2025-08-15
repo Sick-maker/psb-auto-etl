@@ -11,9 +11,9 @@ on:
     paths:
       - 'data/ciphertexts.csv'
       - 'data/baselines.csv'
-      - 'data/clues_seed.csv'
-      - 'data/controls_seed.csv'
+      - 'data/*_seed.csv'                 # catch any seed file
       - 'tools/notion_sync_kryptos.py'
+      - 'tools/check_seed_csv_rectangular.py'
 
 jobs:
   sync:
@@ -30,7 +30,7 @@ jobs:
       - name: Ensure requests
         run: python -m pip install --upgrade pip requests
 
-      - name: Check secrets present
+      - name: Check base secret present
         run: |
           if [ -z "${{ secrets.NOTION_TOKEN }}" ]; then
             echo "NOTION_TOKEN is not set. Skipping."
@@ -47,14 +47,38 @@ jobs:
           fi
           cat args.txt
 
+      - name: Seed CSV column-count check
+        run: python tools/check_seed_csv_rectangular.py
+
+      # Optional: quick preview for logs
+      - name: Preview inputs
+        run: |
+          ls -la data
+          for f in baselines.csv ciphertexts.csv clues_seed.csv controls_seed.csv; do
+            if [ -f "data/$f" ]; then
+              echo "--- $f (head) ---"
+              head -n 3 "data/$f" || true
+            fi
+          done
+
       - name: Sync to Notion
         env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_TOKEN:   ${{ secrets.NOTION_TOKEN }}
           DB_CIPHERTEXTS: ${{ secrets.NOTION_DB_CIPHERTEXTS }}
           DB_BASELINES:   ${{ secrets.NOTION_DB_BASELINES }}
           DB_CLUES:       ${{ secrets.NOTION_DB_CLUES }}
           DB_CONTROLS:    ${{ secrets.NOTION_DB_CONTROLS }}
         run: |
+          # If we are writing (not dry-run), make sure DB IDs are present.
+          if [ "${{ github.event.inputs.dry_run }}" = "false" ]; then
+            for v in DB_CIPHERTEXTS DB_BASELINES DB_CLUES DB_CONTROLS; do
+              if [ -z "${!v}" ]; then
+                echo "$v is not set but required for write mode."
+                exit 1
+              fi
+            done
+          fi
+
           ARGS=$(cut -d= -f2 args.txt)
           echo "Running with ARGS='${ARGS}'"
           python tools/notion_sync_kryptos.py ${ARGS}
