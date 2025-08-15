@@ -1,0 +1,3 @@
+Title,RUN,Clue,Expected Start,Length,Found,Found At,Offset,At Position,Near Position,Anywhere Hits,EditDist@Expected,Candidate Hash,Sample Type,Notes,Version,Changelog
+TEMPLATE (keep),,,,,,,,,,,,,,,
+EXAMPLE — sanity import row,RUN-EXP-20250814-0001-AB,BERLIN,,,false,,,,,,"",best,Placeholder example; safe to delete,1,

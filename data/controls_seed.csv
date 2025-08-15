@@ -1,0 +1,4 @@
+Title,Type,Method/Scoring,Recipe,CTX,Thresholds,Status,Notes,Version,Changelog
+CTL-K1-resolve-v1.0,Positive,(varies per RUN),"Solve K1 under target MTH/SFX",CTX-K1-base-v1.0,"composite_z ≥ 6.0 AND word_hit_rate ≥ 0.30",Ready,Positive control,1,
+CTL-K4-shuffle-neg-v1.0,Negative,(varies per RUN),"Shuffle K4 preserving unigram counts",CTX-K4-base-v1.0,"composite_z ≤ +1.5 AND quadgram_z ≤ +1.5 AND word_hit_rate ≤ 0.06",Ready,Negative control,1,
+TEMPLATE (keep),,,,,,,,,
