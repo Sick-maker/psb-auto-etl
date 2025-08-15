@@ -50,10 +50,10 @@ jobs:
       - name: Sync to Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          DB_CIPHERTEXTS: ${{ secrets.DB_CIPHERTEXTS }}
-          DB_BASELINES:   ${{ secrets.DB_BASELINES }}
-          DB_CLUES:       ${{ secrets.DB_CLUES }}
-          DB_CONTROLS:    ${{ secrets.DB_CONTROLS }}
+          DB_CIPHERTEXTS: ${{ secrets.NOTION_DB_CIPHERTEXTS }}
+          DB_BASELINES:   ${{ secrets.NOTION_DB_BASELINES }}
+          DB_CLUES:       ${{ secrets.NOTION_DB_CLUES }}
+          DB_CONTROLS:    ${{ secrets.NOTION_DB_CONTROLS }}
         run: |
           ARGS=$(cut -d= -f2 args.txt)
           echo "Running with ARGS='${ARGS}'"
