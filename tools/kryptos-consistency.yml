@@ -1,0 +1,13 @@
+name: kryptos-consistency
+on: {push: {branches: [ main ]}, pull_request: {}}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Build Kryptos CSVs
+        run: python tools/kryptos_normalize.py build-csvs
+      - name: Kryptos consistency check
+        run: python tools/check_kryptos_consistency.py
