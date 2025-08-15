@@ -47,7 +47,5 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: 'build: regenerate ciphertexts.csv & baselines.csv'
-          file_pattern: |
-            data/ciphertexts.csv
-            data/baselines.csv
-
+          add_options: '-A'          # <— stage new/removed files as well
+          file_pattern: data/        # <— stage everything in data/
