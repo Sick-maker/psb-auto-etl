@@ -20,4 +20,3 @@ Demo run for wiring; numbers are illustrative only.
 
 ## Broad Narrative
 Everything flowed end-to-end in staging.
-
