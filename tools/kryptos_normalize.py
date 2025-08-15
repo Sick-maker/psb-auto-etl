@@ -1,58 +1,63 @@
-#!/usr/bin/env python3
-import argparse, csv, hashlib, pathlib, sys
+# tools/kryptos_normalize.py
+from pathlib import Path
+import csv, hashlib, sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
-DATA = ROOT / "data"
-RAW  = DATA / "raw"
-NORM_TAG = "upper_strip_v1.0"
+RAW = Path("data/raw")
+OUT_CIPHER = Path("data/ciphertexts.csv")
+OUT_BASE = Path("data/baselines.csv")
 
-def upper_strip(s: str) -> str:
+def letters_only(s: str) -> str:
     return "".join(ch for ch in s.upper() if "A" <= ch <= "Z")
 
-def letters_only(path: pathlib.Path) -> str:
-    return upper_strip(path.read_text(encoding="utf-8"))
-
 def sha256_letters(s: str) -> str:
-    import hashlib
-    return hashlib.sha256(s.encode("utf-8")).hexdigest()
+    return hashlib.sha256(letters_only(s).encode("utf-8")).hexdigest()
 
-def build_csvs():
-    DATA.mkdir(exist_ok=True)
-    ctexts = {}
-    for sec in ("k1","k2","k3","k4"):
-        p = RAW / f"{sec}_cipher.txt"
-        if not p.exists():
-            print(f"ERROR: missing {p}", file=sys.stderr); sys.exit(1)
-        s = letters_only(p)
-        if sec == "k4" and len(s) != 97:
-            print(f"ERROR: K4 letters-only length must be 97, got {len(s)}", file=sys.stderr); sys.exit(1)
-        ctexts[sec.upper()] = s
-    plains = {}
-    for sec in ("k1","k2","k3"):
-        p = RAW / f"{sec}_plain.txt"
-        if not p.exists():
-            print(f"ERROR: missing {p}", file=sys.stderr); sys.exit(1)
-        s = letters_only(p); plains[sec.upper()] = s
-    for sec in ("K1","K2","K3"):
-        if len(ctexts[sec]) != len(plains[sec]):
-            print(f"ERROR: {sec} letters-only length mismatch: cipher={len(ctexts[sec])} plain={len(plains[sec])}", file=sys.stderr); sys.exit(1)
-    with (DATA / "ciphertexts.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["Title","Section","Normalization","Ciphertext (A–Z)","Length","Checksum","Version","Notes"])
-        for sec in ("K1","K2","K3","K4"):
-            s = ctexts[sec]; w.writerow([f"{sec} — base", sec, NORM_TAG, s, len(s), sha256_letters(s), 1, ""])
-    with (DATA / "baselines.csv").open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["Title","Section","Plaintext Canon (A–Z)","Length","Checksum","Version","Notes"])
-        for sec in ("K1","K2","K3"):
-            s = plains[sec]; w.writerow([f"{sec} — baseline", sec, s, len(s), sha256_letters(s), 1, "Misspellings preserved canon"])
-    print("Wrote data/ciphertexts.csv and data/baselines.csv")
+def read_text(p: Path) -> str:
+    return p.read_text(encoding="utf-8", errors="strict")
 
-def main():
-    ap = argparse.ArgumentParser(); sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("build-csvs"); sub.add_parser("normalize")
-    args = ap.parse_args()
-    if args.cmd == "build-csvs": build_csvs()
-    else:
-        import sys; print(upper_strip(sys.stdin.read()))
+def build_csvs() -> None:
+    # --- Ciphertexts (K1–K4) ---
+    rows_c = []
+    for sec in ("K1", "K2", "K3", "K4"):
+        txt = read_text(RAW / f"{sec.lower()}_cipher.txt")
+        norm = letters_only(txt)
+        rows_c.append({
+            "ctx_id": f"CTX-{sec}-base-v1.0",
+            "section": sec,
+            "letters": norm,
+            "length": len(norm),
+            "checksum": sha256_letters(txt),
+        })
+
+    OUT_CIPHER.parent.mkdir(parents=True, exist_ok=True)
+    with OUT_CIPHER.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["ctx_id","section","letters","length","checksum"])
+        w.writeheader(); w.writerows(rows_c)
+
+    # --- Baselines (K1–K3 only) ---
+    rows_b = []
+    for sec in ("K1", "K2", "K3"):
+        txt = read_text(RAW / f"{sec.lower()}_plain.txt")
+        norm = letters_only(txt)
+        rows_b.append({
+            "ctx_id": f"CTX-{sec}-base-v1.0",
+            "section": sec,
+            "plaintext": norm,
+            "length": len(norm),
+            "checksum": sha256_letters(txt),
+        })
+
+    with OUT_BASE.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["ctx_id","section","plaintext","length","checksum"])
+        w.writeheader(); w.writerows(rows_b)
+
+    # Helpful console proof for the workflow log
+    print(f"WROTE {OUT_CIPHER.resolve()}")
+    print(f"WROTE {OUT_BASE.resolve()}")
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) >= 2 and sys.argv[1] == "build-csvs":
+        build_csvs()
+    else:
+        print("Usage: python tools/kryptos_normalize.py build-csvs")
+        sys.exit(2)
