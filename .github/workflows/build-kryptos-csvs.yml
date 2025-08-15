@@ -32,3 +32,15 @@ jobs:
           file_pattern: |
             data/ciphertexts.csv
             data/baselines.csv
+
+# .github/workflows/build-kryptos-csvs.yml
+      - name: Build CSVs
+        run: python tools/kryptos_normalize.py build-csvs
+
+      - name: Show generated files
+        run: |
+          ls -l data
+          echo "--- baselines.csv (head) ---"
+          head -n 5 data/baselines.csv || true
+          echo "--- ciphertexts.csv (head) ---"
+          head -n 5 data/ciphertexts.csv || true
