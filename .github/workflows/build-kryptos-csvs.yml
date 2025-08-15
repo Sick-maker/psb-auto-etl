@@ -26,6 +26,9 @@ jobs:
       - name: Build CSVs
         run: python tools/kryptos_normalize.py build-csvs
 
+      - name: Seed CSV column-count check
+        run: python tools/check_seed_csv_rectangular.py
+
       - name: Verify outputs exist & preview
         run: |
           ls -la data
