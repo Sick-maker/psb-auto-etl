@@ -1,0 +1,34 @@
+name: build-kryptos-csvs
+
+on:
+  push:
+    paths:
+      - 'data/raw/**'
+      - 'tools/kryptos_normalize.py'
+      - 'tools/check_kryptos_consistency.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write  # allow committing CSVs back
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build CSVs
+        run: python tools/kryptos_normalize.py build-csvs
+      - name: Sanity checks
+        run: python tools/check_kryptos_consistency.py
+      - name: Commit generated CSVs
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'build: regenerate ciphertexts.csv & baselines.csv'
+          file_pattern: |
+            data/ciphertexts.csv
+            data/baselines.csv
