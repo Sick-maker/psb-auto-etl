@@ -1,4 +1,3 @@
-id,type,path,checksum,source,license
-COR-unigram-english-demo-v0,Unigram,data/psb_kryptos_pack_20250816T014752Z/data/corpora/resources/unigram_en_demo.txt,095ade40595135ba826399c7125e1833ed6f77767cab31a12ca99189c515184f,demo frequencies,CC0-like (demo)
-COR-quadgram-english-demo-v0,Quadgram,data/psb_kryptos_pack_20250816T014752Z/data/corpora/resources/quadgram_en_demo.txt,ca11a90d61d865dc2450a2be116571fc38d228b106da953bf1671846d3da05fa,demo top quadgrams,CC0-like (demo)
-COR-function-words-demo-v0,Wordlist,data/psb_kryptos_pack_20250816T014752Z/data/corpora/resources/function_words_demo.txt,d35b4453e0a05707cd26e3eae56606e6c9d957e2ad135bfd85e1bdd69eca8051,demo function words,CC0-like (demo)
+id,type,filename,bytes,sha256,source
+CORP-en-quadgram-v2.1,quadgram,en_quadgram_v2.1.csv,139,ef0fa09a7347c1165331b9207740c30726b362bce4664cae1951c5f9012b971a,manual
+CORP-en-unigram-v2.1,unigram,en_unigram_v2.1.csv,297,af9269209730335027389bcb4a69baadd6a017cbb484e192d9e75d65554b3394,manual
