@@ -1,0 +1,4 @@
+name,description,parameters_schema,version,status
+MTH-caesar-scan-v1.0,"Scan all Caesar shifts 0–25 over A–Z (after upper_strip_v1.0 normalization).","SHIFT_RANGE=0..25; ALPHABET=A..Z; NORMALIZATION=upper_strip_v1.0",1,Ready
+MTH-vigenere-ic-scan-v1.0,"Estimate likely Vigenère key lengths using index-of-coincidence, then rank. A–Z after normalization.","KEYLEN_RANGE=2..12; ESTIMATOR=IC; ALPHABET=A..Z; NORMALIZATION=upper_strip_v1.0",1,Ready
+MTH-coltrans-3to12-v1.0,"Columnar transposition with column count 3..12; try both read/write directions; keep top candidates.","COLS_RANGE=3..12; DIRECTIONS=std,rev; NORMALIZATION=upper_strip_v1.0",1,Ready
