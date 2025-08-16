@@ -13,16 +13,10 @@ Env vars required:
 Usage:
   python tools/notion_sync_kryptos.py [--dry-run]
 
-Notes:
-- We infer page titles based on section:
-    ciphertexts: "{section} — base"         (e.g., "K2 — base")
-    baselines:   "{section} — baseline"     (e.g., "K2 — baseline")
-- We link CTX relations (Baselines/Clues/Controls → Ciphertexts) by section.
-- We adapt to your property names by reading the DB schema and only setting
-  properties that exist.
+Extras:
 - Schema guard: raises if a DB is missing required columns.
-- No-op optimization: for existing pages, we compare normalized values and skip
-  PATCH when nothing would change.
+- No-op optimization: skip PATCH when outgoing props match what’s on the page.
+- Template safety: skip any page whose title begins with "template".
 """
 
 import csv
@@ -41,10 +35,10 @@ BASELINES_CSV   = os.path.join(DATA_DIR, "baselines.csv")
 CLUES_CSV       = os.path.join(DATA_DIR, "clues_seed.csv")
 CONTROLS_CSV    = os.path.join(DATA_DIR, "controls_seed.csv")
 
-# --- required column guard (names as they appear in your Notion DBs) ---
+# --- required column guard (as named in your Notion DBs) ---
 REQ_CIPHERTEXTS = ["Section", "Ciphertext (A–Z)", "Checksum", "Normalization", "Version"]
 REQ_BASELINES   = ["Section", "Plaintext Canon (A–Z)", "Version", "CTX"]
-REQ_CLUES       = ["Token", "Notes", "Version", "CTX"]      # "Expected Start", "Length" optional
+REQ_CLUES       = ["Token", "Notes", "Version", "CTX"]      # Optional: Expected Start, Length
 REQ_CONTROLS    = ["Type", "Method/Scoring", "Recipe", "Thresholds", "Status", "Notes", "Version", "CTX"]
 
 # ---------- helpers ----------
@@ -68,7 +62,6 @@ def get_db_schema(token: str, db_id: str) -> dict:
     return r.json()
 
 def title_prop_name(db_schema: dict) -> str:
-    """Return the property name that is type 'title'."""
     for pname, pdef in db_schema.get("properties", {}).items():
         if pdef.get("type") == "title":
             return pname
@@ -93,24 +86,16 @@ def ensure_relation(page_id: str) -> dict:
     return {"relation": [{"id": page_id}]}
 
 def build_props_from_schema(schema: dict, desired: dict) -> dict:
-    """
-    Given DB schema and desired raw values {prop_name: raw_value},
-    shape them to the correct Notion property payloads when possible.
-    Unknown props are ignored (safe no-op).
-    """
     out = {}
     props = schema.get("properties", {})
     for pname, raw in desired.items():
-        if pname not in props:
+        if pname not in props or raw is None:
             continue
         ptype = props[pname]["type"]
-        if raw is None:
-            continue
         if ptype == "rich_text":
             out[pname] = notion_rich_text(str(raw))
         elif ptype == "title":
-            # (title is set separately in create_page)
-            pass
+            pass  # set in create payload
         elif ptype == "number":
             try:
                 out[pname] = {"number": float(raw)}
@@ -134,16 +119,11 @@ def build_props_from_schema(schema: dict, desired: dict) -> dict:
             out[pname] = {ptype: str(raw)}
         elif ptype == "checkbox":
             out[pname] = {"checkbox": bool(raw)}
-        else:
-            continue
     return out
 
 def query_page_by_title(token: str, db_id: str, title_prop: str, name: str) -> t.Optional[str]:
     url = f"{NOTION_API}/databases/{db_id}/query"
-    payload = {
-        "filter": {"property": title_prop, "title": {"equals": name}},
-        "page_size": 1,
-    }
+    payload = {"filter": {"property": title_prop, "title": {"equals": name}}, "page_size": 1}
     r = requests.post(url, headers=headers(token), json=payload)
     r.raise_for_status()
     results = r.json().get("results", [])
@@ -168,18 +148,26 @@ def create_page(token: str, db_id: str, title_prop: str, name: str, props: dict)
 def update_page(token: str, page_id: str, props: dict) -> None:
     payload = {"properties": props}
     r = requests.patch(f"{NOTION_API}/pages/{page_id}", headers=headers(token), json=payload)
-    r.raise_for_status()
+    try:
+        r.raise_for_status()
+    except requests.HTTPError as e:
+        # Surface Notion's message (super handy when a property validation fails)
+        dbg = None
+        try:
+            dbg = r.json()
+        except Exception:
+            dbg = r.text
+        raise requests.HTTPError(
+            f"{e} :: while updating page {page_id} with props {list(props.keys())} :: {dbg}",
+            response=r
+        )
 
 # ---------- normalization for "no-op" diff ----------
 
 def _norm_payload_value_from_schema(ptype: str, value: dict):
-    """Take a shaped payload prop (what we PATCH) and reduce to a comparable value."""
     if ptype == "rich_text":
-        # {"rich_text":[{"type":"text","text":{"content":s}}]}
         arr = value.get("rich_text", [])
-        return "".join(
-            (x.get("text", {}) or {}).get("content", "") for x in arr if isinstance(x, dict)
-        )
+        return "".join((x.get("text", {}) or {}).get("content", "") for x in arr if isinstance(x, dict))
     if ptype == "select":
         return (value.get("select") or {}).get("name")
     if ptype == "status":
@@ -196,11 +184,9 @@ def _norm_payload_value_from_schema(ptype: str, value: dict):
         return tuple(sorted([i for i in ids if i]))
     if ptype in ("url", "email", "phone_number"):
         return value.get(ptype)
-    # For unknown types, return the dict itself (best effort)
     return value
 
 def _norm_page_value_from_schema(ptype: str, value: dict):
-    """Take a page property value as returned by Notion and reduce to a comparable value."""
     if ptype == "rich_text":
         arr = value.get("rich_text", [])
         return "".join(x.get("plain_text", "") for x in arr if isinstance(x, dict))
@@ -225,28 +211,31 @@ def _norm_page_value_from_schema(ptype: str, value: dict):
     return value
 
 def _normalized_subset_equal(schema: dict, page_props: dict, shaped_payload: dict) -> bool:
-    """
-    Compare only the keys in shaped_payload against what's already on the page.
-    Returns True if they are equal (no update needed).
-    """
     props_def = schema.get("properties", {})
     for pname, payload_val in shaped_payload.items():
         if pname not in props_def:
-            # unknown to this DB; we would have skipped it anyway
             continue
         ptype = props_def[pname]["type"]
-
         new_norm = _norm_payload_value_from_schema(ptype, payload_val)
         page_val = page_props.get(pname, {})
         cur_norm = _norm_page_value_from_schema(ptype, page_val if isinstance(page_val, dict) else {})
-
         if new_norm != cur_norm:
             return False
     return True
 
-# ---------- upsert with schema guard + no-op optimization ----------
+def _page_title_text(schema: dict, page: dict) -> str:
+    tprop = title_prop_name(schema)
+    arr = (page.get("properties", {}).get(tprop, {}) or {}).get("title", []) or []
+    return "".join(x.get("plain_text", "") for x in arr if isinstance(x, dict)).strip()
+
+# ---------- upsert with guards + no-op + template skip ----------
 
 def upsert(token: str, db_schema: dict, db_id: str, name: str, props: dict, dry: bool=False) -> str:
+    # Hard skip if the *requested* name looks like a template
+    if (name or "").strip().lower().startswith("template"):
+        print(f"Skip template page by name: {name}")
+        return "skipped-template"
+
     title_prop = title_prop_name(db_schema)
     page_id = query_page_by_title(token, db_id, title_prop, name)
     shaped = build_props_from_schema(db_schema, props)
@@ -255,8 +244,11 @@ def upsert(token: str, db_schema: dict, db_id: str, name: str, props: dict, dry:
         if dry:
             print(f"DRY: update '{name}' ({page_id}) with {list(shaped.keys())}")
             return page_id
-        # fetch page to compare
         page = get_page(token, page_id)
+        # Safety: if the matched page is actually a template, skip
+        if _page_title_text(db_schema, page).lower().startswith("template"):
+            print(f"Skip template page: {name} ({page_id})")
+            return page_id
         page_props = page.get("properties", {})
         if _normalized_subset_equal(db_schema, page_props, shaped):
             print(f"No change: {name}")
@@ -282,7 +274,6 @@ def load_csv(path: str) -> list:
         return [{k.strip(): (v or "").strip() for k, v in row.items()} for row in rdr]
 
 def section_from_ctx(ctx_id: str) -> str:
-    # e.g., CTX-K4-base-v1.0 -> K4
     if not ctx_id:
         return ""
     parts = ctx_id.split("-")
@@ -313,8 +304,7 @@ def sync(dry_run: bool=False) -> None:
 
     # 1) Ciphertexts
     sec_to_cipher_id: dict[str, str] = {}
-    rows_c = load_csv(CIPHERTEXTS_CSV)
-    for r in rows_c:
+    for r in load_csv(CIPHERTEXTS_CSV):
         section = r.get("section") or section_from_ctx(r.get("ctx_id", ""))
         if not section:
             continue
@@ -330,8 +320,7 @@ def sync(dry_run: bool=False) -> None:
         sec_to_cipher_id[section] = pid
 
     # 2) Baselines
-    rows_b = load_csv(BASELINES_CSV)
-    for r in rows_b:
+    for r in load_csv(BASELINES_CSV):
         section = r.get("section") or section_from_ctx(r.get("ctx_id", ""))
         if not section:
             continue
@@ -345,13 +334,15 @@ def sync(dry_run: bool=False) -> None:
         }
         upsert(token, schema_base, db_base, name, props, dry_run)
 
-    # 3) Clues (seed)
-    rows_cl = load_csv(CLUES_CSV)
-    for r in rows_cl:
+    # 3) Clues (seed) — hard-skip template-like titles
+    for r in load_csv(CLUES_CSV):
         token_word = r.get("token") or r.get("Token") or ""
         ctx_id = r.get("ctx_id") or r.get("CTX") or ""
         section = r.get("section") or section_from_ctx(ctx_id) or "K4"
-        name = r.get("title") or f"{section}: {token_word}".strip()
+        name = (r.get("title") or f"{section}: {token_word}").strip()
+        if name.lower().startswith("template"):
+            print(f"Skip template-like clue row: {name}")
+            continue
         ctx_pid = sec_to_cipher_id.get(section)
         props = {
             "Token": token_word,
@@ -363,10 +354,12 @@ def sync(dry_run: bool=False) -> None:
         }
         upsert(token, schema_clues, db_clues, name, props, dry_run)
 
-    # 4) Controls (seed)
-    rows_ct = load_csv(CONTROLS_CSV)
-    for r in rows_ct:
-        title = r.get("title") or r.get("Title") or ""
+    # 4) Controls (seed) — hard-skip template-like titles
+    for r in load_csv(CONTROLS_CSV):
+        title = (r.get("title") or r.get("Title") or "").strip()
+        if title.lower().startswith("template"):
+            print(f"Skip template-like control row: {title}")
+            continue
         ctx_id = r.get("ctx_id") or r.get("CTX") or ""
         section = r.get("section") or section_from_ctx(ctx_id)
         ctx_pid = sec_to_cipher_id.get(section) if section else None
