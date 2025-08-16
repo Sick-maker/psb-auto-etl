@@ -1,0 +1,2 @@
+name,formula,conventions,version,status
+SFX-chi2-quadgram-v2.1,"composite = 0.5*chi2_unigram + 0.5*(-logP_quadgram)","unigram = CORP-en-unigram-v2.1; quadgram = CORP-en-quadgram-v2.1; letters = A..Z; smoothing = add-k (k≈1e-6); log base = 10",1,Ready
