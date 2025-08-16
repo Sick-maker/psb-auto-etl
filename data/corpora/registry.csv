@@ -1,3 +1,3 @@
 id,type,filename,bytes,sha256,source
-CORP-en-quadgram-v2.1,quadgram,en_quadgram_v2.1.csv,139,ef0fa09a7347c1165331b9207740c30726b362bce4664cae1951c5f9012b971a,manual
+CORP-en-quadgram-v2.1,quadgram,en_quadgram_v2.1.csv,156,bafde9b1bd202b8c8b86d4cd5d40988220f92550d9a3320717c630fd5b3d5e0e,manual
 CORP-en-unigram-v2.1,unigram,en_unigram_v2.1.csv,297,af9269209730335027389bcb4a69baadd6a017cbb484e192d9e75d65554b3394,manual
