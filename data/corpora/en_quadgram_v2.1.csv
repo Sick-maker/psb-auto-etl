@@ -1,11 +1,11 @@
 gram,log10_weight
-# id: CORP-en-quadgram-v2.1
+# id: CORP-en-quadgram-v2.1,
 TION,-3.56
 NTHE,-3.98
 THER,-4.05
 INGT,-4.12
 ETHE,-4.29
-DNTF,-4.27
+DNFT,-4.27
 OFTH,-4.32
 ATIO,-4.40
 THAT,-4.41
