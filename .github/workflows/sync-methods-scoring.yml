@@ -44,6 +44,9 @@ jobs:
       - name: Seed CSV column-count check
         run: python tools/check_seed_csv_rectangular.py
 
+      - name: Lint Methods JSON
+        run: python tools/check_methods_json.py
+
       - name: Sync to Notion
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
