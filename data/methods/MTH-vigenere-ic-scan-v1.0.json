@@ -1,0 +1,16 @@
+{
+  "name": "MTH-vigenere-ic-scan-v1.0",
+  "description": "Estimate likely key lengths by Index of Coincidence; decrypt and rank with selected scoring profile.",
+  "parameters_schema": {
+    "alphabet": "A-Z",
+    "key_len_min": 2,
+    "key_len_max": 20,
+    "ic_window": 1000,
+    "step": 1,
+    "scoring_id": "SFX-chi2-quadgram-v2.1",
+    "output_top_n": 10
+  },
+  "version": "v1.0",
+  "status": "Ready",
+  "notes": "Uses IC sweep to prioritize key lengths; scored with SFX-chi2-quadgram-v2.1."
+}
