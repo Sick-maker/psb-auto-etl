@@ -1,0 +1,16 @@
+{
+  "name": "MTH-coltrans-3to12-v1.0",
+  "description": "Columnar transposition sweep (3–12 columns) over common readout/pad variants; rank with selected scoring profile.",
+  "parameters_schema": {
+    "alphabet": "A-Z",
+    "min_cols": 3,
+    "max_cols": 12,
+    "readout_orders": ["row", "column"],
+    "pad_modes": ["none", "X-fill"],
+    "scoring_id": "SFX-chi2-quadgram-v2.1",
+    "output_top_n": 10
+  },
+  "version": "v1.0",
+  "status": "Ready",
+  "notes": "Broad sweep across col sizes and readouts; scored with SFX-chi2-quadgram-v2.1."
+}
