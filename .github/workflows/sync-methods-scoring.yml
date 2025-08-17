@@ -41,6 +41,9 @@ jobs:
           fi
           cat args.txt
 
+      - name: Build methods_seed.csv from JSON
+        run: python tools/build_methods_seed.py
+
       - name: Seed CSV column-count check
         run: python tools/check_seed_csv_rectangular.py
 
