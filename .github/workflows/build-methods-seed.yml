@@ -1,0 +1,19 @@
+name: build-methods-seed
+on:
+  push:
+    paths:
+      - 'data/methods/*.json'
+      - 'tools/build_methods_seed.py'
+  workflow_dispatch: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: python tools/build_methods_seed.py
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "build(methods): refresh methods_seed.csv"
+          file_pattern: data/methods_seed.csv
