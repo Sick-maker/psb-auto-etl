@@ -1,0 +1,14 @@
+{
+  "name": "MTH-elliptic-curve-v1.0",
+  "description": "Toy EC cipher driver; brute parameters then score.",
+  "schema": {"alphabet":"A–Z","a_min":1,"a_max":13,"b_min":1,"b_max":13},
+  "version": "1.0",
+  "status": "Experimental",
+  "notes": "Demo only",
+  "x": {
+    "category": "algebraic",
+    "scoring_id": "SFX-chi2-quadgram-v2.1",
+    "corpora": ["CORP-en-unigram-v2.1","CORP-en-quadgram-v2.1"],
+    "experimental": true
+  }
+}
