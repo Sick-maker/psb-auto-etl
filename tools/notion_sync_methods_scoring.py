@@ -94,8 +94,10 @@ def ensure_status(value: str) -> dict:
 def build_props_from_schema(schema: dict, desired: dict) -> dict:
     out = {}
     props = schema.get("properties", {})
+    unknown = []
     for pname, raw in desired.items():
-        if raw is None or pname not in props:
+        if pname not in props:
+            unknown.append(pname)
             continue
         ptype = props[pname]["type"]
         if ptype == "title":
@@ -118,6 +120,8 @@ def build_props_from_schema(schema: dict, desired: dict) -> dict:
             out[pname] = {ptype: str(raw)}
         elif ptype == "checkbox":
             out[pname] = {"checkbox": str(raw).lower() in ("1", "true", "yes")}
+        if unknown:
+          print(f"[sync] Skipping unknown Notion props (add them in DB to sync): {unknown}")
     return out
 
 def query_page_by_title(token: str, db_id: str, title_prop: str, name: str) -> t.Optional[str]:
