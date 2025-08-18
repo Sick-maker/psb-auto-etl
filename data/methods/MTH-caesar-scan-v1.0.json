@@ -1,15 +1,18 @@
 {
   "name": "MTH-caesar-scan-v1.0",
-  "description": "Brute-force Caesar shifts over A–Z; rank by selected scoring profile.",
-  "parameters_schema": {
+  "description": "Brute-force Caesar shifts over A-Z; rank by selected scoring profile.",
+  "schema": {
     "alphabet": "A-Z",
     "shift_min": 0,
     "shift_max": 25,
     "keep_nonalpha": false,
-    "scoring_id": "SFX-chi2-quadgram-v2.1",
-    "output_top_n": 5
+    "scoring_id": "SFX-chi2-quadgram-v2.1"
   },
-  "version": "v1.0",
+  "version": "1.0",
   "status": "Ready",
-  "notes": "Default scoring points at SFX-chi2-quadgram-v2.1."
+  "notes": "",
+  "x": {
+    "category": "bruteforce",
+    "corpora": ["CORP-en-unigram-v2.1", "CORP-en-quadgram-v2.1"]
+  }
 }
