@@ -1,0 +1,33 @@
+name: run-pilot-caesar
+
+on:
+  workflow_dispatch:
+    inputs:
+      sections:
+        description: "Sections (e.g., K1,K2,K3,K4)"
+        required: false
+        default: "K1,K2,K3,K4"
+      notion:
+        description: "Write a RUN row to Notion?"
+        required: false
+        default: "false"
+
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Run pilot
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_RUN: ${{ secrets.NOTION_DB_RUN }}
+        run: |
+          pip install requests
+          NFLAG=""
+          if [ "${{ github.event.inputs.notion }}" = "true" ]; then NFLAG="--notion"; fi
+          python tools/pilot_caesar.py --sections "${{ github.event.inputs.sections }}" $NFLAG
+      - name: Show artifacts
+        run: ls -la RUN-EXP-* || true
